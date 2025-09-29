@@ -20,7 +20,7 @@ class _AuthState extends State<Auth> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),
@@ -28,16 +28,20 @@ class _AuthState extends State<Auth> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              Text(
                 'Welcome!',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'What should we call you?',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withAlpha(153), 
+                ),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -45,10 +49,24 @@ class _AuthState extends State<Auth> {
                 decoration: InputDecoration(
                   labelText: 'Enter your name',
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).colorScheme.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
                 ),
               ),
@@ -59,9 +77,9 @@ class _AuthState extends State<Auth> {
 
                   if (name.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter your name.'),
-                        backgroundColor: Colors.red,
+                      SnackBar(
+                        content: const Text('Please enter your name.'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
                     return;
@@ -70,23 +88,23 @@ class _AuthState extends State<Auth> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-
-                      builder: (context) => MainScreen(
-                        userName: name,
-                      ),
+                      builder: (context) => MainScreen(userName: name),
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2A9D8F),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Get Started',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               ),
             ],

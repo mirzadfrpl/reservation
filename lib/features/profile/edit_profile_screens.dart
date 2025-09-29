@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class EditProfileScreen extends StatefulWidget {
-
   final String initialName;
   final String initialEmail;
 
@@ -18,12 +17,13 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  final TextEditingController _phoneController = TextEditingController(text: "+62 812 3456 7890");
+  final TextEditingController _phoneController = TextEditingController(
+    text: "+62 812 3456 7890",
+  );
 
   @override
   void initState() {
     super.initState();
-
     _nameController = TextEditingController(text: widget.initialName);
     _emailController = TextEditingController(text: widget.initialEmail);
   }
@@ -39,30 +39,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Edit Profile',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        backgroundColor: const Color(0xFF2A9D8F),
+        backgroundColor: Theme.of(context).primaryColor,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(24.0),
         children: <Widget>[
-          _buildProfileImage(),
+          _buildProfileImage(context),
           const SizedBox(height: 30.0),
-          _buildTextField(label: 'Full Name', controller: _nameController, icon: Icons.person_outline),
+          _buildTextField(
+            context,
+            label: 'Full Name',
+            controller: _nameController,
+            icon: Icons.person_outline,
+          ),
           const SizedBox(height: 16.0),
-          _buildTextField(label: 'Email Address', controller: _emailController, icon: Icons.email_outlined),
+          _buildTextField(
+            context,
+            label: 'Email Address',
+            controller: _emailController,
+            icon: Icons.email_outlined,
+          ),
           const SizedBox(height: 16.0),
-          _buildTextField(label: 'Phone Number', controller: _phoneController, icon: Icons.phone_outlined),
+          _buildTextField(
+            context,
+            label: 'Phone Number',
+            controller: _phoneController,
+            icon: Icons.phone_outlined,
+          ),
           const SizedBox(height: 40.0),
           _buildSaveChangesButton(context),
         ],
@@ -70,13 +91,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildProfileImage() {
+  Widget _buildProfileImage(BuildContext context) {
     return Center(
       child: Stack(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 60,
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            child: Icon(
+              Icons.person,
+              size: 60,
+              color: Theme.of(context).primaryColor.withAlpha(128), 
+            ),
           ),
           Positioned(
             bottom: 0,
@@ -86,12 +112,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               width: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2A9D8F),
-                border: Border.all(width: 2, color: Colors.white),
+                color: Theme.of(context).primaryColor,
+                border: Border.all(
+                  width: 2,
+                  color: Theme.of(context).colorScheme.surface,
+                ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.edit,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 size: 20,
               ),
             ),
@@ -101,25 +130,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField({required String label, required TextEditingController controller, required IconData icon}) {
+  Widget _buildTextField(
+    BuildContext context, {
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+  }) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.grey[600]),
+        prefixIcon: Icon(
+          icon,
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
+        ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2A9D8F)),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor),
         ),
       ),
     );
@@ -134,17 +171,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Navigator.of(context).pop();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF2A9D8F),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 2,
       ),
-      child: const Text(
+      child: Text(
         'Save Changes',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onPrimary,
+        ),
       ),
     );
   }

@@ -1,70 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:provider/provider.dart';
 import 'package:ecommerce/features/home/home.dart';
 import 'package:ecommerce/features/profile/profile_screens.dart';
-import 'package:ecommerce/features/cart/screens/cartscreen.dart';
+import 'package:ecommerce/features/favorite/favorites_screen.dart';
+import 'package:ecommerce/providers/home_provider.dart';
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends StatelessWidget {
   final String userName;
+
   const MainScreen({super.key, required this.userName});
 
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
+  List<Widget> _screens(String userName) => [
+    HomeScreen(userName: userName),
+    const ProfileScreens(),
+    const FavoritesScreen(),
+  ];
 
-class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
-  late final List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      HomeScreen(userName: widget.userName),
-      const ProfileScreens(),
-      const BasketScreen(),
-    ];
+  Color _getIconColor(int index, int selectedIndex, BuildContext context) {
+    return selectedIndex == index
+        ? Theme.of(context).primaryColor
+        : Theme.of(context).unselectedWidgetColor;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: CurvedNavigationBar(
-        index: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        backgroundColor: Color(0xFF2A9D8F),
-        color: Colors.white,
-        buttonBackgroundColor: Colors.white,
-        height: 60,
-        animationDuration: const Duration(milliseconds: 300),
-        items: <Widget>[
-          Icon(Icons.home, size: 30, color: _getIconColor(0)),
-          Icon(Icons.person, size: 30, color: _getIconColor(0)),
-          Icon(Icons.shopping_basket, size: 30, color: _getIconColor(0)),
-        ],
-      ),
+    return Consumer<HomeProvider>(
+      builder: (context, homeProvider, child) {
+        return Scaffold(
+          extendBody: true,
+          body: _screens(userName)[homeProvider.selectedIndex],
+          bottomNavigationBar: CurvedNavigationBar(
+            index: homeProvider.selectedIndex,
+            onTap: (index) {
+              homeProvider.setSelectedIndex(index);
+            },
+            backgroundColor: Colors.transparent,
+            color: Theme.of(context).colorScheme.surface,
+            buttonBackgroundColor: Theme.of(context).colorScheme.surface,
+            height: 60,
+            animationDuration: const Duration(milliseconds: 300),
+            items: <Widget>[
+              Icon(
+                Icons.home,
+                size: 28,
+                color: _getIconColor(0, homeProvider.selectedIndex, context),
+              ),
+              Icon(
+                Icons.person,
+                size: 28,
+                color: _getIconColor(1, homeProvider.selectedIndex, context),
+              ),
+              Icon(
+                Icons.favorite,
+                size: 28,
+                color: _getIconColor(2, homeProvider.selectedIndex, context),
+              ),
+            ],
+          ),
+        );
+      },
     );
-  }
-
-  Color _getBackgroundColor(int index) {
-    switch (index) {
-      case 0:
-        return const Color(0xFF2A9D8F);
-      case 1:
-        return Colors.blueAccent;
-      case 2:
-        return Colors.redAccent;
-      default:
-        return const Color(0xFF2A9D8F);
-    }
-  }
-
-  Color _getIconColor(int index) {
-    return _selectedIndex == index ? _getBackgroundColor(index) : Colors.grey;
   }
 }

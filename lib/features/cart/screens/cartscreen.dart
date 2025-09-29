@@ -16,20 +16,20 @@ class OrderItem {
 
 const List<OrderItem> orderItems = [
   OrderItem(
-    imageUrl: 'asset/images/onboarding3.png',
-    title: 'melting pot',
+    imageUrl: 'asset/images/splash1.png',
+    title: 'Melting Pot',
     packs: '2 packs',
     price: '₦ 20,000',
   ),
   OrderItem(
-    imageUrl: 'asset/images/onboarding3.png',
-    title: 'kafe kita',
+    imageUrl: 'asset/images/splash1.png',
+    title: 'Kafe Kita',
     packs: '1 pack',
     price: '₦ 10,000',
   ),
   OrderItem(
-    imageUrl: 'asset/images/onboarding3.png',
-    title: 'kafein',
+    imageUrl: 'asset/images/splash1.png',
+    title: 'Kafein',
     packs: '3 packs',
     price: '₦ 30,000',
   ),
@@ -41,21 +41,26 @@ class BasketScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const _CustomAppBar(),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: orderItems.length,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-              itemBuilder: (context, index) {
-                return _BasketListItem(item: orderItems[index]);
-              },
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: orderItems.length,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 10.0,
+                ),
+                itemBuilder: (context, index) {
+                  return _BasketListItem(item: orderItems[index]);
+                },
+              ),
             ),
-          ),
-          const _CheckoutSection(),
-        ],
+            const _CheckoutSection(),
+          ],
+        ),
       ),
     );
   }
@@ -67,34 +72,18 @@ class _CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              size: 18,
-              color: Colors.black,
-            ),
-          ),
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back_ios_new,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
+        onPressed: () => Navigator.of(context).pop(),
       ),
-      title: const Text(
+      title: Text(
         'My Basket',
-        style: TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
-          fontSize: 22,
-        ),
+        style: Theme.of(context).textTheme.headlineSmall,
       ),
       centerTitle: true,
     );
@@ -111,50 +100,74 @@ class _BasketListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2.0,
-      shadowColor: Colors.grey.withOpacity(0.2),
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                item.imageUrl,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
+    return Dismissible(
+      key: Key(item.title),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {},
+      background: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.error,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [Icon(Icons.delete_outline, color: Colors.white, size: 28)],
+        ),
+      ),
+      child: Card(
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Image.asset(
+                  item.imageUrl,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    item.packs,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey[600],
+                    const SizedBox(height: 6),
+                    Text(
+                      item.packs,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withAlpha(153), 
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      item.price,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            _QuantityChanger(price: item.price),
-          ],
+              const _QuantityChanger(),
+            ],
+          ),
         ),
       ),
     );
@@ -162,49 +175,38 @@ class _BasketListItem extends StatelessWidget {
 }
 
 class _QuantityChanger extends StatelessWidget {
-  final String price;
-  const _QuantityChanger({required this.price});
+  const _QuantityChanger();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Row(
       children: [
-        Text(
-          price,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2A9D8F),
-          ),
+        _buildQuantityButton(context, Icons.remove, () {}),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: Text('1', style: Theme.of(context).textTheme.titleMedium),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            _buildQuantityButton(Icons.remove, () {}),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text('1', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ),
-            _buildQuantityButton(Icons.add, () {}),
-          ],
-        )
+        _buildQuantityButton(context, Icons.add, () {}),
       ],
     );
   }
 
-  Widget _buildQuantityButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildQuantityButton(
+    BuildContext context,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 28,
-        height: 28,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color: const Color(0xFF2A9D8F).withOpacity(0.1),
-          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 16, color: const Color(0xFF2A9D8F)),
+        child: Icon(icon, size: 18, color: Theme.of(context).primaryColor),
       ),
     );
   }
@@ -216,53 +218,72 @@ class _CheckoutSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
+            color: Theme.of(context).shadowColor.withAlpha(20), 
             spreadRadius: 5,
-            blurRadius: 15,
+            blurRadius: 20,
             offset: const Offset(0, -5),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subtotal', style: Theme.of(context).textTheme.bodyLarge),
+              Text('₦ 60,000', style: Theme.of(context).textTheme.bodyLarge),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                'Delivery Fee',
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
-              SizedBox(height: 4),
+              Text('₦ 5,000', style: Theme.of(context).textTheme.bodyLarge),
+            ],
+          ),
+          const Divider(height: 30),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total', style: Theme.of(context).textTheme.titleLarge),
               Text(
-                '₦ 60,000',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                '₦ 65,000',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Theme.of(context).primaryColor,
+                ),
               ),
             ],
           ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2A9D8F),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 18),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                elevation: 0,
               ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Checkout',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              child: Text(
+                'Checkout',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
             ),
           ),
         ],
@@ -270,4 +291,3 @@ class _CheckoutSection extends StatelessWidget {
     );
   }
 }
-

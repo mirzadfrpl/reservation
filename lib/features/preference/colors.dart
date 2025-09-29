@@ -1,5 +1,4 @@
-class MainColor{
-
+class MainColor {
   MainColor._();
 
   static const int primary = 0xFF2A9D8F;
@@ -15,6 +14,4 @@ class MainColor{
   static const int onSurface = 0xFF000000;
   static const int onError = 0xFFFFFFFF;
   static const int textColor = 0xFFE9C46A;
-
-
 }

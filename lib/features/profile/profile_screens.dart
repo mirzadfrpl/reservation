@@ -12,22 +12,21 @@ class ProfileScreens extends StatelessWidget {
     const String email = 'mirza@example.com';
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'My Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
-        backgroundColor: const Color(0xFF2A9D8F),
+        backgroundColor: Theme.of(context).primaryColor,
         elevation: 0,
         centerTitle: true,
       ),
       body: ListView(
         children: <Widget>[
-          _buildProfileHeader(name, email),
+          _buildProfileHeader(context, name, email),
           const SizedBox(height: 20.0),
           _buildActionMenu(context, name, email),
         ],
@@ -35,37 +34,40 @@ class ProfileScreens extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(String name, String email) {
+  Widget _buildProfileHeader(BuildContext context, String name, String email) {
     return Container(
       padding: const EdgeInsets.all(20.0),
-      decoration: const BoxDecoration(
-        color: Color(0xFF2A9D8F),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(30.0),
           bottomRight: Radius.circular(30.0),
         ),
       ),
       child: Column(
         children: <Widget>[
-          const CircleAvatar(
+          CircleAvatar(
             radius: 50,
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.onPrimary,
+            child: Icon(
+              Icons.person_outline,
+              size: 50,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
           const SizedBox(height: 12.0),
           Text(
             name,
-            style: const TextStyle(
-              fontSize: 22,
-              color: Colors.white,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4.0),
           Text(
             email,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary.withAlpha(204),
             ),
           ),
         ],
@@ -79,22 +81,22 @@ class ProfileScreens extends StatelessWidget {
       child: Column(
         children: [
           _buildMenuCard(
-            icon: Icons.edit,
+            context: context,
+            icon: Icons.edit_outlined,
             title: 'Edit Profile',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EditProfileScreen(
-                    initialName: name,
-                    initialEmail: email,
-                  ),
+                  builder: (context) =>
+                      EditProfileScreen(initialName: name, initialEmail: email),
                 ),
               );
             },
           ),
           _buildMenuCard(
-            icon: Icons.settings,
+            context: context,
+            icon: Icons.settings_outlined,
             title: 'Settings',
             onTap: () {
               Navigator.push(
@@ -104,20 +106,24 @@ class ProfileScreens extends StatelessWidget {
             },
           ),
           _buildMenuCard(
+            context: context,
             icon: Icons.help_outline,
             title: 'Help Center',
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const HelpCenterScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const HelpCenterScreen(),
+                ),
               );
             },
           ),
           const SizedBox(height: 20),
           _buildMenuCard(
+            context: context,
             icon: Icons.logout,
             title: 'Logout',
-            textColor: Colors.red,
+            textColor: Theme.of(context).colorScheme.error,
             onTap: () {},
           ),
         ],
@@ -126,30 +132,32 @@ class ProfileScreens extends StatelessWidget {
   }
 
   Widget _buildMenuCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required VoidCallback onTap,
     Color? textColor,
   }) {
     return Card(
-      elevation: 2.0,
+      elevation: 1.0,
+      shadowColor: Theme.of(context).shadowColor.withAlpha(26),
       margin: const EdgeInsets.symmetric(vertical: 6.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF2A9D8F)),
+        leading: Icon(icon, color: Theme.of(context).primaryColor),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: textColor,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(color: textColor),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(102),
+        ),
         onTap: onTap,
       ),
     );
   }
 }
-

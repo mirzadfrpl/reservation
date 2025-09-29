@@ -1,5 +1,4 @@
-
-class MainAssets{
+class MainAssets {
   MainAssets._();
 
   static const path = 'asset/images/';
@@ -11,7 +10,4 @@ class MainAssets{
   static const food = '${path}makanan.png';
   static const food1 = '${path}makanan1.png';
   static const food2 = '${path}makanan2.png';
-
-
-
 }

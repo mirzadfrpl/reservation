@@ -1,253 +1,549 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:ecommerce/models/restaurant.dart';
+import 'package:ecommerce/providers/restaurant_provider.dart';
+import 'package:ecommerce/providers/home_provider.dart';
 import 'package:ecommerce/features/home/Screens/detail_screens.dart';
+import 'package:ecommerce/features/home/Screens/seacrh_screen.dart';
+import 'dart:ui';
+import 'dart:async';
 
+class AnimatedGridItem extends StatefulWidget {
+  final Widget child;
+  final int index;
+  const AnimatedGridItem({super.key, required this.child, required this.index});
+  @override
+  State<AnimatedGridItem> createState() => _AnimatedGridItemState();
+}
 
-class RestaurantListItem {
-  final String id;
-  final String name;
-  final String pictureId;
-  final String city;
-  final double rating;
+class _AnimatedGridItemState extends State<AnimatedGridItem> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: widget.index * 100), () {
+      if (mounted) {
+        Provider.of<HomeProvider>(
+          context,
+          listen: false,
+        ).animateGridItem(widget.index);
+      }
+    });
+  }
 
-  RestaurantListItem({
-    required this.id,
-    required this.name,
-    required this.pictureId,
-    required this.city,
-    required this.rating,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<HomeProvider>(
+      builder: (context, homeProvider, child) {
+        final bool isAnimated = homeProvider.animatedGridItems.contains(
+          widget.index,
+        );
 
-  factory RestaurantListItem.fromJson(Map<String, dynamic> json) {
-    return RestaurantListItem(
-      id: json['id'],
-      name: json['name'],
-      pictureId: json['pictureId'],
-      city: json['city'],
-      rating: json['rating'].toDouble(),
+        return AnimatedOpacity(
+          duration: const Duration(milliseconds: 500),
+          opacity: isAnimated ? 1 : 0,
+          curve: Curves.easeInOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 500),
+            transform: Matrix4.translationValues(0, isAnimated ? 0 : 50, 0),
+            curve: Curves.easeInOut,
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
     );
   }
 }
 
-
-Future<List<RestaurantListItem>> fetchRestaurants() async {
-  final url = 'https://restaurant-api.dicoding.dev/list';
-  final response = await http.get(Uri.parse(url));
-
-  if (response.statusCode == 200) {
-    final jsonResponse = json.decode(response.body);
-    final List restaurants = jsonResponse['restaurants'];
-    return restaurants.map((json) => RestaurantListItem.fromJson(json)).toList();
-  } else {
-    throw Exception('Gagal memuat daftar restoran');
-  }
-}
-
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   final String userName;
   const HomeScreen({super.key, required this.userName});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  List<RestaurantListItem> _allRestaurants = [];
-  bool _isLoading = true;
-  String _errorMessage = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchAndSetRestaurants();
-  }
-
-  Future<void> _fetchAndSetRestaurants() async {
-    try {
-      final restaurants = await fetchRestaurants();
-      if (mounted) {
-        setState(() {
-          _allRestaurants = restaurants;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    Provider.of<HomeProvider>(context, listen: false).startHeaderAnimation();
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
+      body: Consumer<RestaurantProvider>(
+        builder: (context, restaurantProvider, child) {
+          switch (restaurantProvider.state) {
+            case ResultState.loading:
+              return Center(
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              );
+            case ResultState.error:
+              return _buildError(context, restaurantProvider.message);
+            case ResultState.noData:
+              return _buildError(context, restaurantProvider.message);
+            case ResultState.hasData:
+              return Stack(
+                children: [
+                  _buildHeaderBackground(context),
+                  _buildContentSheet(context, restaurantProvider),
+                ],
+              );
+            // Default clause tidak diperlukan karena semua case sudah ditangani
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeaderBackground(BuildContext context) {
+    final homeProvider = Provider.of<HomeProvider>(context);
+    final nameToShow = userName.isNotEmpty ? userName : 'Guest';
+
     return Container(
-      color: const Color(0xFF2A9D8F),
-      child: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : _errorMessage.isNotEmpty
-            ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.white)))
-            : ListView(
-          padding: const EdgeInsets.all(24.0),
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildWelcomeText(),
-            const SizedBox(height: 32),
-            const Text(
-              'Recommendations',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(24, 70, 24, 0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withAlpha(200),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 600),
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, -0.5),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                  child: homeProvider.headerAnimated
+                      ? Align(
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            key: const ValueKey('header_content'),
+                            children: [
+                              Text(
+                                'Hello,',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary.withAlpha(204),
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                              ),
+                              Text(
+                                nameToShow,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox(
+                          height: 60,
+                          key: ValueKey('header_placeholder'),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                child: Icon(
+                  Icons.person,
+                  color: Theme.of(context).primaryColor,
+                  size: 30,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).shadowColor.withAlpha(26),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.search,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withAlpha(153),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Search your favorite restaurant...",
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withAlpha(153),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            _buildRestaurantGrid(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentSheet(BuildContext context, RestaurantProvider provider) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.65,
+      minChildSize: 0.65,
+      maxChildSize: 0.95,
+      builder: (BuildContext context, ScrollController scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: CustomScrollView(
+            controller: scrollController,
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildCategoryFilters(context),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                  child: ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).colorScheme.secondary,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      'Recommendations',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 20,
+                    crossAxisSpacing: 20,
+                    childAspectRatio: 0.78,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final restaurant = provider.restaurants[index];
+                    return AnimatedGridItem(
+                      index: index,
+                      child: RestaurantCard(restaurant: restaurant),
+                    );
+                  }, childCount: provider.restaurants.length),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  SliverToBoxAdapter _buildCategoryFilters(BuildContext context) {
+    final homeProvider = Provider.of<HomeProvider>(context);
+    final List<String> categories = [
+      'All',
+      'Popular',
+      'Nearby',
+      'Western',
+      'Asian',
+    ];
+
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: 60,
+        child: ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(left: 24, top: 20),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            final isSelected = category == homeProvider.selectedCategory;
+            return GestureDetector(
+              onTap: () {
+                homeProvider.selectCategory(category);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: isSelected
+                      ? null
+                      : Border.all(color: Theme.of(context).dividerColor),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Theme.of(context).primaryColor.withAlpha(77),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Text(
+                    category,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError(BuildContext context, String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              color: Theme.of(context).colorScheme.onPrimary,
+              size: 80,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Failed to Load Data',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimary.withAlpha(204),
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Icon(Icons.menu_rounded, color: Colors.white, size: 32),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.restaurant_menu, color: Color(0xFF2A9D8F), size: 28),
-              SizedBox(width: 8),
-              Text('reservation', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF2A9D8F))),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWelcomeText() {
-    final nameToShow = widget.userName.isNotEmpty ? widget.userName : 'Guest';
-    return Text(
-      'Hello $nameToShow,\nFind your favorite restaurant today!',
-      style: const TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-        height: 1.3,
-      ),
-    );
-  }
-
-  Widget _buildRestaurantGrid() {
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.7,
-      ),
-      itemCount: _allRestaurants.length,
-      itemBuilder: (context, index) {
-        final restaurant = _allRestaurants[index];
-        return RestaurantCard(restaurant: restaurant);
-      },
-    );
-  }
 }
-
 
 class RestaurantCard extends StatelessWidget {
   final RestaurantListItem restaurant;
-
   const RestaurantCard({super.key, required this.restaurant});
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = 'https://restaurant-api.dicoding.dev/images/small/${restaurant.pictureId}';
+    final imageUrl =
+        'https://restaurant-api.dicoding.dev/images/medium/${restaurant.pictureId}';
 
     return GestureDetector(
       onTap: () {
-
-        Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreens(restaurantId: restaurant.id)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailScreens(restaurantId: restaurant.id),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24.0),
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            )
+              color: Theme.of(context).shadowColor.withAlpha(26),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.broken_image, color: Colors.grey),
-                      );
-                    },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                  child: Hero(
+                    tag: 'restaurant_image_${restaurant.id}',
+                    child: Image.network(
+                      imageUrl,
+                      height: 125,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 125,
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        child: Icon(
+                          Icons.restaurant,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSecondaryContainer,
+                          size: 40,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0,
+                          vertical: 4.0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(77),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: Theme.of(context).colorScheme.secondary,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              restaurant.rating.toStringAsFixed(1),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+              child: Text(
                 restaurant.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF264653)),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 6),
-              Row(
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
                 children: [
-                  Icon(Icons.location_on, color: Colors.grey.shade600, size: 16),
+                  Icon(
+                    Icons.location_on,
+                    size: 14,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withAlpha(153),
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       restaurant.city,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withAlpha(153),
+                      ),
                     ),
                   ),
-                  const Icon(Icons.star, color: Color(0xFFE9C46A), size: 18),
-                  const SizedBox(width: 4),
-                  Text(
-                    restaurant.rating.toString(),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF264653)),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.favorite_border,
+                      size: 20,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withAlpha(153),
+                    ),
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
